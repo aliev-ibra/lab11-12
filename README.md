@@ -99,3 +99,119 @@ $env:JAVA_HOME="tools/jdk-21.0.9+10"
 # Run using bundled Maven
 tools\apache-maven-3.9.12\bin\mvn.cmd spring-boot:run
 The server will start on: http://localhost:8082
+
+
+## 🧪 Testing & Verification
+
+This section describes how the application was tested to verify security, authentication, and access control requirements.
+
+### 1️⃣ Application Startup Test
+
+The application was started using local Maven:
+
+```bash
+tools\apache-maven-3.9.12\bin\mvn.cmd spring-boot:run
+✔ Server started successfully
+✔ Application available at http://localhost:8082
+✔ No runtime errors during startup
+
+2️⃣ Registration & Password Policy Test
+Test: Register user with weak password
+
+json
+Copy code
+{
+  "username": "testuser",
+  "password": "123456"
+}
+Result: ❌ Rejected
+✔ Password validation correctly enforced
+
+Test: Register user with strong password
+
+json
+Copy code
+{
+  "username": "testuser",
+  "password": "StrongP@ssw0rd!"
+}
+Result: ✅ Accepted
+✔ User stored in database with encrypted password
+
+3️⃣ Authentication (Login) Test
+Endpoint: POST /auth/login
+
+Test: Login with valid credentials
+✔ JWT token returned in response
+
+Test: Login with invalid password
+✔ Authentication rejected
+✔ No sensitive error information leaked
+
+4️⃣ Unauthorized Access Test
+Test: Access protected endpoint without JWT
+
+http
+Copy code
+GET /notes
+Result:
+❌ 403 Forbidden
+✔ Security filter correctly blocks unauthenticated access
+
+5️⃣ Authorized Access Test
+Test: Access /notes with valid JWT in Authorization header
+
+http
+Copy code
+Authorization: Bearer <JWT_TOKEN>
+Result:
+✔ Access granted
+✔ User-specific notes returned
+
+6️⃣ Ownership Enforcement Test
+Test: User A attempts to access User B’s note
+
+http
+Copy code
+GET /notes/{otherUserNoteId}
+Result:
+❌ Access denied
+✔ Ownership verification works correctly
+
+7️⃣ SQL Injection Test
+Test Input:
+
+json
+Copy code
+{
+  "username": "' OR '1'='1",
+  "password": "test"
+}
+Result:
+❌ Login failed
+✔ SQL injection prevented by JPA parameterized queries
+
+8️⃣ CRUD Functionality Test
+Operation	Result
+Create Note	✅ Success
+Read Note	✅ Success
+Update Note	✅ Success
+Delete Note	✅ Success
+
+✔ All operations restricted to authenticated user only
+
+9️⃣ Error Handling Test
+Test: Access non-existing resource
+✔ Safe error message returned
+✔ No stack trace or internal details exposed
+
+✅ Test Conclusion
+All security and functional requirements for the REST-based lab implementation were successfully tested:
+
+Authentication and authorization function correctly
+
+Access control and ownership enforcement work as expected
+
+Input validation and SQL injection protection are effective
+
+Application behaves securely under invalid and unauthorized requests
